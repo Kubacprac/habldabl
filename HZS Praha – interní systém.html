@@ -50,7 +50,7 @@ form{display:grid;gap:10px}label{font-size:14px;font-weight:600;display:grid;gap
 .send{display:flex;gap:8px}
 .menu{display:none;margin-bottom:12px}
 @media(max-width:800px){.app{grid-template-columns:1fr}aside{position:static;height:auto}.menu{display:none}.chat{grid-template-columns:1fr}.row{grid-template-columns:1fr}nav{display:flex;flex-wrap:wrap;gap:4px}}
-dialog{border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);padding:18px;width:min(460px,92vw)}dialog::backdrop{background:#0008}.acts{display:flex;gap:8px;flex-wrap:wrap}.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}.gal figure{margin:0}.gal img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;display:block}.gal figcaption{font-size:14px;color:var(--mute);padding-top:4px}body::before{content:"";position:fixed;top:0;right:0;bottom:0;left:230px;background:var(--crest) center/min(78vh,560px) no-repeat;opacity:.12;pointer-events:none;z-index:0}.app{position:relative;z-index:1}.exc td{background:color-mix(in srgb,var(--err) 16%,transparent)}.exc .tag.bad{background:var(--err);color:#fff;border-color:var(--err)}@media(max-width:800px){body::before{left:0}}nav .grp{font:700 20px "Barlow Condensed",Arial,sans-serif;color:#fff;padding:4px 10px 6px;width:100%}
+dialog{border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);padding:18px;width:min(460px,92vw)}dialog::backdrop{background:#0008}.acts{display:flex;gap:8px;flex-wrap:wrap}.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}.gal figure{margin:0}.gal img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;display:block}.gal figcaption{font-size:14px;color:var(--mute);padding-top:4px}body::before{content:"";position:fixed;top:0;right:0;bottom:0;left:230px;background:var(--crest) center/min(78vh,560px) no-repeat;opacity:.12;pointer-events:none;z-index:0}.app{position:relative;z-index:1}.exc td{background:color-mix(in srgb,var(--err) 16%,transparent)}.exc .tag.bad{background:var(--err);color:#fff;border-color:var(--err)}.refresh{margin-top:16px;padding:0 8px;font-size:13px;color:#c9cfee}@media(max-width:800px){body::before{left:0}}nav .grp{font:700 20px "Barlow Condensed",Arial,sans-serif;color:#fff;padding:4px 10px 6px;width:100%}
 </style>
 <style>artifact-sync,artifact-local{display:contents}</style></head>
 <body>
@@ -59,6 +59,7 @@ dialog{border:1px solid var(--line);border-radius:8px;background:var(--panel);co
  <div class="brand"><div class="crest" role="img" aria-label="Znak HZS"></div><h1>HZS Praha</h1><span>Interní informační systém</span></div>
  <nav id="nav" aria-label="Hlavní navigace"></nav>
  <div class="role" id="rolebox"></div>
+<div class="refresh"><button class="sm" id="rfb">Obnovit</button> <span id="rfm"></span></div>
 </aside>
 <main id="main" tabindex="-1"></main>
 <dialog id="dlg"></dialog>
@@ -92,7 +93,7 @@ const vsl=[];const onDuty=()=>[...(vsl.length?[{n:"Vedení",rank:"Plný přístu
 const DB={members,excuses,fleet,courses,docs,news,info,photos,vyjezdy,kontakty,vsl};
 const snap=()=>JSON.stringify({...DB,chans}),dsnap=()=>JSON.stringify(DB);
 function apply(s){for(const k in DB)if(s[k]){DB[k].length=0;DB[k].push(...s[k])}if(s.chans){for(const k in chans)delete chans[k];Object.assign(chans,s.chans)}}
-let SEED={},ART=null,BASE="",PT=0;try{SEED=JSON.parse($("#seed").textContent)||{}}catch(e){}
+let SEED={},ART=null,BASE="",PT=0,PS="";try{SEED=JSON.parse($("#seed").textContent)||{}}catch(e){}
 function save(){try{localStorage.setItem("hzs3",JSON.stringify({v:SEED.v||0,s:JSON.parse(snap())}))}catch(e){}if(ART&&dsnap()!=BASE&&!PT)PT=setTimeout(()=>{PT=0;pub()},2500)}
 [members,excuses,fleet,courses,news].forEach(a=>a.length=0);for(const k in chans)delete chans[k];Object.assign(chans,{"Vedení":[],"Stanice Praha":[]});
 try{if(SEED.s)apply(SEED.s)}catch(e){}
@@ -141,7 +142,9 @@ oznameni(){return hd("Oznámení")+(role>1?`<div class="card" style="margin-bott
 const can=()=>(me>=0||UID=="vedeni")&&role>=1;
 const visCh=()=>Object.keys(chans).filter(k=>k!="Vedení"||role>=1);
 const myName=()=>UID=="vedeni"?"Vedení":(members.find(m=>m.id==UID)||{}).n;
-async function pub(){const m=$("#pubm")||{};m.textContent="Zveřejňuji…";try{const c=document.documentElement.cloneNode(true);["#main","#nav","#rolebox","#dlg"].forEach(s=>{c.querySelector(s).innerHTML=""});c.querySelector("#seed").textContent=JSON.stringify({v:(SEED.v||0)+1,s:JSON.parse(dsnap())}).replace(/</g,String.fromCharCode(92)+"u003c");await ART.publish("<!DOCTYPE html>"+c.outerHTML)}catch(e){m.textContent="Zveřejnění se nepovedlo. Nemáš právo stránku upravovat, nebo nastal konflikt."}}
+const ps=t=>{PS=t;const m=$("#pubm");if(m)m.textContent=t};
+async function pub(){ps("Zveřejňuji…");try{const c=document.documentElement.cloneNode(true);["#main","#nav","#rolebox","#dlg","#rfm"].forEach(x=>{c.querySelector(x).innerHTML=""});const dl=c.querySelector("#dlg");dl.removeAttribute("open");dl.removeAttribute("style");const n={v:(SEED.v||0)+1,s:JSON.parse(dsnap())};c.querySelector("#seed").textContent=JSON.stringify(n).replace(/</g,String.fromCharCode(92)+"u003c");await ART.publish("<!DOCTYPE html>"+c.outerHTML);SEED=n;BASE=dsnap();ps("Zveřejněno ✓ (verze "+n.v+")");const f=$("#rfm");if(f)f.textContent="verze "+n.v}catch(e){ps("Zveřejnění se nepovedlo: "+((e&&e.message)||e))}}
+async function refresh(manual){const f=$("#rfm");try{const r=await fetch(location.href.split("#")[0],{cache:"no-store"}),t=await r.text(),mm=t.match(/<script id="seed" type="application\/json">([\s\S]*?)<\/script>/);if(!mm)throw 0;const n=JSON.parse(mm[1]);if((n.v||0)>(SEED.v||0)){SEED=n;apply(n.s);BASE=dsnap();render();if(f)f.textContent="aktualizováno, verze "+n.v}else if(f)f.textContent="nejnovější verze "+(SEED.v||0)}catch(e){if(manual)location.reload()}}
 const eb=(k,i)=>can()?`<button class="sm sec" data-e="${k}:${i}">Upravit</button>`:"";
 const ab=(k,l)=>can()?`<p><button data-e="${k}:new">${l}</button></p>`:"";
 const SCH={
@@ -174,7 +177,7 @@ $("#lf").onsubmit=e=>{e.preventDefault();const n=x=>$(x).value.trim().toLowerCas
 $("#vf").onsubmit=e=>{e.preventDefault();if($("#vk").value.trim()==VEDKOD)loginVed();else $("#ve").textContent="Nesprávný kód."}}
 
 function render(){delete chans["Celý sbor"];members.forEach(m=>{m.id=m.id||uid();m.role=m.role||"Hasič"});me=members.findIndex(m=>m.id==UID);const ved=UID=="vedeni";if(me<0&&!ved)return location.hash=="#login"?loginView():publicView();const U=ved?VED:members[me],mx=RL[U.role];role=Math.min(role,mx);
-$("#rolebox").innerHTML=`<div style="margin-bottom:8px"><div>Přihlášen:</div><b style="font-size:17px;color:#fff">${esc(U.n)}</b>${ved?"":`<div>Osobní číslo: ${esc(U.num||"–")}</div>`}<div>${esc(U.rank||"")} · ${esc(U.role)}</div></div>`+(mx>0?`<label>Zobrazit jako<select id="role">${["Hasič","Velitel","Vedení"].slice(0,mx+1).map((r,i)=>`<option value="${i}"${i==role?" selected":""}>${r}</option>`).join("")}</select></label>`:"")+`<button class="sm sec" id="lo" style="margin-top:8px;color:#fff;border-color:#ffffff55">Odhlásit se</button>`+(mx>1&&ART?`<button class="sm" id="pubb" style="margin-top:8px;display:block">Zveřejnit změny${dsnap()!=BASE?" •":""}</button><div id="pubm" style="font-size:13px;margin-top:4px"></div>`:"");
+$("#rolebox").innerHTML=`<div style="margin-bottom:8px"><div>Přihlášen:</div><b style="font-size:17px;color:#fff">${esc(U.n)}</b>${ved?"":`<div>Osobní číslo: ${esc(U.num||"–")}</div>`}<div>${esc(U.rank||"")} · ${esc(U.role)}</div></div>`+(mx>0?`<label>Zobrazit jako<select id="role">${["Hasič","Velitel","Vedení"].slice(0,mx+1).map((r,i)=>`<option value="${i}"${i==role?" selected":""}>${r}</option>`).join("")}</select></label>`:"")+`<button class="sm sec" id="lo" style="margin-top:8px;color:#fff;border-color:#ffffff55">Odhlásit se</button>`+(mx>1&&ART?`<button class="sm" id="pubb" style="margin-top:8px;display:block">Zveřejnit změny${dsnap()!=BASE?" •":""}</button><div id="pubm" style="font-size:13px;margin-top:4px">${PS}</div>`:"");
 const rs=$("#role");if(rs)rs.onchange=()=>{role=+rs.value;render()};const pb2=$("#pubb");if(pb2)pb2.onclick=pub;$("#lo").onclick=()=>{UID="";try{localStorage.removeItem("hzs2u")}catch(e){}render()};
 const id=(location.hash||"#dashboard").slice(1);const ok=secs.filter(s=>s[2]<=role);const cur=ok.find(s=>s[0]==id)||ok[0];
 $("#nav").innerHTML=ok.map(s=>`<a href="#${s[0]}" class="${s[0]==cur[0]?"on":""}">${s[1]}</a>`).join("");
@@ -187,7 +190,7 @@ if(k=="sluzba"&&$("#duty"))$("#duty").onclick=()=>{if(ved){if(vsl.length)vsl.len
 if(k=="skoleni")document.querySelectorAll("[data-co]").forEach(b=>b.onclick=()=>{const c=courses[b.dataset.co];c.in=!c.in;render()});
 if(k=="oznameni"&&role>1)$("#nf").onsubmit=e=>{e.preventDefault();news.unshift({t:$("#nt").value,b:$("#nb").value,d:"dnes"});render()}}
 
-addEventListener("hashchange",render);render();
+addEventListener("hashchange",render);$("#rfm").textContent="verze "+(SEED.v||0);$("#rfb").onclick=()=>{if(ART&&dsnap()!=BASE)pub();else refresh(true)};setInterval(()=>{if(!(ART&&dsnap()!=BASE)&&!$("#dlg").open&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName))refresh(false)},40000);render();
 </script>
 
 
